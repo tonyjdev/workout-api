@@ -1,61 +1,173 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Workout API
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+API de Laravel 12 para gestionar rutinas y metricas de entrenamiento. Este documento explica como levantar el entorno local y como desplegar la aplicacion en un servidor Linux.
 
-## About Laravel
+## Tecnologias clave
+- Laravel 12 + PHP 8.3
+- Sanctum para autenticacion basada en tokens
+- Pest para pruebas
+- Vite + Tailwind para activos front-end
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Requisitos previos
+- PHP 8.3 con las extensiones `BCMath`, `Ctype`, `Fileinfo`, `JSON`, `Mbstring`, `OpenSSL`, `PDO`, `Tokenizer`, `XML`
+- Composer 2.6+
+- Node.js 20 LTS y npm 10 (Vite 7 requiere caracteristicas de Node 20)
+- Base de datos: MySQL 8/Percona/MariaDB 10.5+, PostgreSQL 13+ o SQLite (archivo `database/database.sqlite`)
+- Git y acceso al repositorio
+- Opcional: Redis para colas/cache (configurable via `.env`)
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Configuracion local (desarrollo)
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+1. **Clonar el repositorio**
+   ```bash
+   git clone git@github.com:tu-organizacion/workout-api.git
+   cd workout-api
+   ```
 
-## Learning Laravel
+2. **Variables de entorno**
+   ```bash
+   cp .env.example .env          # Linux/macOS
+   copy .env.example .env        # Windows PowerShell
+   ```
+   Completa los valores de `APP_URL`, credenciales de base de datos y el `QUEUE_CONNECTION`. Para usar SQLite basta con habilitar `DB_CONNECTION=sqlite` y asegurarte de que exista `database/database.sqlite`.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+3. **Carpetas y permisos de `storage`**
+   Laravel necesita que `storage/` y `bootstrap/cache/` existan y sean escribibles:
+   ```bash
+   mkdir -p storage/app storage/framework/{cache,data,sessions,testing,views} storage/logs bootstrap/cache
+   php artisan storage:link
+   chmod -R 775 storage bootstrap/cache   # o asigna permisos equivalentes en Windows
+   ```
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+4. **Instalar dependencias y preparar la base de datos**
+   La forma mas rapida es usar el script incluido:
+   ```bash
+   composer setup
+   ```
+   El comando instala dependencias PHP, crea `.env` si falta, genera la `APP_KEY`, ejecuta migraciones, instala dependencias Node y hace un `npm run build`.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+   Si prefieres los pasos manuales:
+   ```bash
+   composer install
+   php artisan key:generate
+   php artisan migrate --seed
+   npm install
+   npm run build
+   ```
 
-## Laravel Sponsors
+5. **Levantar el entorno de desarrollo**
+   ```bash
+   composer dev
+   ```
+   Ejecuta simultaneamente `php artisan serve`, `php artisan queue:listen --tries=1` y `npm run dev` con recarga en caliente. Si necesitas correrlos por separado:
+   ```bash
+   php artisan serve
+   php artisan queue:listen --tries=1
+   npm run dev
+   ```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+6. **Pruebas y calidad**
+   ```bash
+   php artisan test
+   php artisan test --filter WorkoutFeature  # ejecutar pruebas especificas
+   ./vendor/bin/pint                         # formateo PSR-12
+   ```
 
-### Premium Partners
+7. **Re-seed rapido**
+   ```bash
+   php artisan migrate:fresh --seed
+   ```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+## Variables de entorno destacadas
 
-## Contributing
+| Variable | Descripcion |
+|----------|-------------|
+| `APP_NAME`, `APP_ENV`, `APP_DEBUG`, `APP_URL` | Nombre, entorno, modo debug y URL publica |
+| `APP_KEY` | Generada con `php artisan key:generate`; necesaria para cifrado |
+| `DB_*` | Credenciales y host de la base de datos |
+| `SANCTUM_STATEFUL_DOMAINS`, `SESSION_DOMAIN` | Requerido si se consume desde un frontend diferente |
+| `QUEUE_CONNECTION`, `REDIS_*` | Configuracion de colas/eventos |
+| `FILESYSTEM_DISK`, `AWS_*` | Destinos para subir archivos si se usan discos externos |
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Scripts utiles
+- `composer setup`: bootstrap completo (deps PHP, `.env`, key, migraciones, deps Node, build)
+- `composer dev`: servidor HTTP + worker de colas + Vite watcher
+- `npm run dev`: recarga en caliente para activos front
+- `npm run build`: compilar activos para produccion
+- `php artisan test --parallel`: ejecutar pruebas en paralelo cuando el entorno lo permita
 
-## Code of Conduct
+## Guia de despliegue (Linux con PHP-FPM/Nginx o Apache)
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+1. **Preparar el servidor**
+   - PHP 8.3 con las extensiones listadas arriba, PHP-FPM configurado y `proc_open` habilitado
+   - Composer 2 y Node.js 20 para compilar activos
+   - Servidor web apuntando a `public/`
+   - Base de datos accesible y credenciales ya creadas
 
-## Security Vulnerabilities
+2. **Obtener codigo y dependencias**
+   ```bash
+   git pull --ff-only
+   composer install --no-dev --optimize-autoloader
+   npm ci
+   npm run build
+   ```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+3. **Variables de entorno y llaves**
+   - Copia `.env.example` a `.env` (solo la primera vez) y configura valores productivos.
+   - Genera la clave si aun no existe: `php artisan key:generate --force`.
+   - Nunca subas `.env` al repositorio.
 
-## License
+4. **Preparar `storage` y enlaces simbolicos**
+   ```bash
+   php artisan storage:link
+   mkdir -p storage/app storage/framework/{cache,data,sessions,testing,views} storage/logs bootstrap/cache
+   sudo chown -R www-data:www-data storage bootstrap/cache
+   sudo chmod -R 775 storage bootstrap/cache
+   ```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+5. **Migraciones y seeding**
+   ```bash
+   php artisan migrate --force
+   php artisan db:seed --force      # solo si necesitas datos base en produccion
+   ```
+
+6. **Optimizar la aplicacion**
+   ```bash
+   php artisan config:cache
+   php artisan route:cache
+   php artisan event:cache
+   php artisan view:cache
+   php artisan optimize
+   ```
+
+7. **Servicios en background**
+   - **Colas**: configura Supervisor, systemd o PM2 para ejecutar `php artisan queue:work --tries=1 --max-time=3600`.
+     ```ini
+     [program:workout-api-queue]
+     command=php /var/www/workout-api/artisan queue:work --tries=1 --timeout=60
+     directory=/var/www/workout-api
+     autostart=true
+     autorestart=true
+     user=www-data
+     stdout_logfile=/var/log/supervisor/workout-api-queue.log
+     stderr_logfile=/var/log/supervisor/workout-api-queue.log
+     ```
+   - **Scheduler**: agrega al cron del sistema:
+     ```
+     * * * * * php /var/www/workout-api/artisan schedule:run >> /dev/null 2>&1
+     ```
+
+8. **Verificaciones posteriores al despliegue**
+   - Comprueba que el worker de colas esta activo (`php artisan queue:listen` muestra jobs nuevos).
+   - Ejecuta `php artisan test --env=testing` si tu pipeline lo requiere.
+   - Revisa logs en `storage/logs/laravel.log`.
+
+## Resolucion de problemas
+- Error de permisos: asegurate de que el usuario del servidor web tenga escritura en `storage/` y `bootstrap/cache/`.
+- Assets desactualizados: vuelve a ejecutar `npm run build` y limpia el cache del navegador.
+- `.env` perdido: recuperalo del administrador del entorno; nunca se versiona.
+
+## Recursos adicionales
+- Documentacion oficial de Laravel: https://laravel.com/docs/12.x
+- Pest: https://pestphp.com/docs
+- Vite: https://vitejs.dev/guide/
