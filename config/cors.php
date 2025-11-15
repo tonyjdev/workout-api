@@ -19,7 +19,15 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['http://localhost:5173', 'http://workout-app.test', 'http://workout-api.test'],
+    'allowed_origins' => [
+        'http://localhost:5173',
+        'http://192.168.1.130:5173',    // para debug en local
+        'https://localhost',            // para debug en Android Studio
+        'http://workout-app.test',      // desarrollo en local
+        'http://workout-api.test',      // desarrollo en local
+        'https://workout.tonyj.cloud',  // servidor de producción
+        'capacitor://localhost',        // app instalada en el dispositivo
+    ],
 
     'allowed_origins_patterns' => [],
 
@@ -29,6 +37,5 @@ return [
 
     'max_age' => 0,
 
-    'supports_credentials' => true,
-
+    'supports_credentials' => false,    // sin cookies
 ];

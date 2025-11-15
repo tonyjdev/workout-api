@@ -43,6 +43,15 @@ class AuthenticatedTokenController extends Controller
     }
 
     /**
+     * Usuario autenticado (útil para "yo" / perfil).
+     * Header: Authorization: Bearer <token>
+     */
+    public function me(Request $request): UserResource
+    {
+        return new UserResource($request->user());
+    }
+
+    /**
      * Revoke the authenticated user's current access token.
      */
     public function destroy(Request $request): Response
@@ -51,6 +60,19 @@ class AuthenticatedTokenController extends Controller
 
         if ($token) {
             $token->delete();
+        }
+
+        return response()->noContent();
+    }
+
+    /**
+     * Logout de todos los dispositivos: revoca todos los tokens del usuario.
+     */
+    public function destroyAll(Request $request): Response
+    {
+        $user = $request->user();
+        if ($user) {
+            $user->tokens()->delete();
         }
 
         return response()->noContent();

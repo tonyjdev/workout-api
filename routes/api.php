@@ -9,6 +9,7 @@ use App\Http\Controllers\WorkoutController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
+/*
 Route::post('auth/register', [RegisteredUserController::class, 'store'])
     ->name('auth.register');
 
@@ -28,6 +29,20 @@ Route::middleware('auth:sanctum')->group(function (): void {
 
     Route::delete('auth/logout', [AuthenticatedTokenController::class, 'destroy'])
         ->name('auth.logout');
+});
+*/
+
+// Login (sin middleware)
+Route::post('auth/login', [AuthenticatedTokenController::class, 'store']);
+Route::post('auth/register', [RegisteredUserController::class, 'store'])
+    ->name('auth.register');
+
+// Rutas protegidas por Sanctum (Bearer)
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/me', [AuthenticatedTokenController::class, 'me']);
+    Route::post('/logout', [AuthenticatedTokenController::class, 'destroy']);
+    Route::post('/logout-all', [AuthenticatedTokenController::class, 'destroyAll']); // opcional
+    // ...tus endpoints protegidos
 });
 
 Route::get('workouts', [WorkoutController::class, 'index'])
